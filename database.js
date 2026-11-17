@@ -37,7 +37,6 @@ async function initDb() {
         console.log("Supabase (PostgreSQL) tables verified/initialized.");
     } catch (err) {
         console.error("CRITICAL: Supabase initialization failed:", err.message);
-        process.exit(1);
     }
 }
 

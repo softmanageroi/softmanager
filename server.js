@@ -11,6 +11,8 @@ const db = require("./database");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.set("trust proxy", 1);
+
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
@@ -27,13 +29,20 @@ app.use(session({
     }
 }));
 
-// Serve static frontend assets
-app.use("/html", express.static(path.join(__dirname, "html")));
-app.use("/css", express.static(path.join(__dirname, "css")));
-app.use("/js", express.static(path.join(__dirname, "js")));
+// Serve static frontend assets (supports both public/ and root directory)
+const serveStaticFolder = (urlPath, dirName) => {
+    const pub = path.join(__dirname, "public", dirName);
+    const root = path.join(__dirname, dirName);
+    app.use(urlPath, express.static(pub));
+    app.use(urlPath, express.static(root));
+};
+
+serveStaticFolder("/html", "html");
+serveStaticFolder("/css", "css");
+serveStaticFolder("/js", "js");
 
 // Root redirect to login
-app.get("/", (req, res) => {
+app.get(["/", "/index.html"], (req, res) => {
     res.redirect("/html/index.html");
 });
 
@@ -176,6 +185,11 @@ app.delete("/api/data", requireAuth, async (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`Backend running on http://localhost:${PORT}`);
-});
+// Local dev only — Vercel uses the exported app directly
+if (process.env.NODE_ENV !== "production") {
+    app.listen(PORT, () => {
+        console.log(`Backend running on http://localhost:${PORT}`);
+    });
+}
+
+module.exports = app;
